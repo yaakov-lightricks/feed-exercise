@@ -13,7 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_LONG
 import com.google.android.material.snackbar.Snackbar
 import com.lightricks.feedexercise.R
+import com.lightricks.feedexercise.data.FeedRepository
+import com.lightricks.feedexercise.data.RealFeedRepository
+import com.lightricks.feedexercise.database.AppDatabase
 import com.lightricks.feedexercise.databinding.FeedFragmentBinding
+import com.lightricks.feedexercise.network.FeedApiService
 
 /**
  * This Fragment shows the feed grid. The feed consists of template thumbnail images.
@@ -36,8 +40,11 @@ class FeedFragment : Fragment() {
     }
 
     private fun setupViewModel() {
-        viewModel = ViewModelProvider(this, FeedViewModelFactory())
-            .get(FeedViewModel::class.java)
+        val feedApiService = FeedApiService.getFeedApiService()
+        val db = AppDatabase.getDb(requireContext().applicationContext)
+        viewModel =
+            FeedViewModelFactory(RealFeedRepository(feedApiService, db.feedDao()))
+                .create(FeedViewModel::class.java)
 
         viewModel.getFeedItems().observe(viewLifecycleOwner, Observer { items ->
             feedAdapter.items = items
