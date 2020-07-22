@@ -1,47 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:bind="http://schemas.android.com/apk/res-auto">
+    xmlns:bind="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <import type="android.view.View"/>
+
+        <import type="android.view.View" />
+
         <variable
             name="viewModel"
             type="com.lightricks.feedexercise.ui.feed.FeedViewModel" />
     </data>
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe_refresh_layout"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".ui.feed.FeedFragment"
-        app:refreshing="@{viewModel.isLoading}"
-        bind:onRefreshListener="@{() -> viewModel.refresh()}">
+        android:orientation="vertical">
 
-        <FrameLayout
-            android:id="@+id/main_content"
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:minHeight="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:title="@string/app_name"
+            app:navigationOnClickListener="@{() -> viewModel.shuffleDisplay()}"
+            app:navigationIcon="@android:drawable/stat_notify_sync_noanim"
+            app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="@dimen/feed_content_padding">
+            app:refreshing="@{viewModel.isLoading}"
+            bind:onRefreshListener="@{() -> viewModel.refresh()}"
+            tools:context=".ui.feed.FeedFragment">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_view"
+            <FrameLayout
+                android:id="@+id/main_content"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:visibility="@{viewModel.isEmpty ? View.GONE : View.VISIBLE}"/>
+                android:padding="@dimen/feed_content_padding">
 
-            <TextView
-                android:id="@+id/empty_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/feed_empty_text"
-                android:visibility="@{viewModel.isEmpty ? View.VISIBLE : View.GONE}"/>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="@{viewModel.isEmpty ? View.GONE : View.VISIBLE}" />
 
-        </FrameLayout>
+                <TextView
+                    android:id="@+id/empty_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/feed_empty_text"
+                    android:visibility="@{viewModel.isEmpty ? View.VISIBLE : View.GONE}" />
 
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            </FrameLayout>
 
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </LinearLayout>
 </layout>

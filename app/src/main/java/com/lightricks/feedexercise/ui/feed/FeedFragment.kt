@@ -24,6 +24,7 @@ import com.lightricks.feedexercise.network.FeedApiService
  * Layout file: feed_fragment.xml
  */
 class FeedFragment : Fragment() {
+
     // Kotlin note: Usually, variables are initialized at the same time they are declared.
     // Here "lateinit" means that we promise to initialize the variable before accessing it.
     private lateinit var dataBinding: FeedFragmentBinding
