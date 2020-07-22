@@ -6,10 +6,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.lightricks.feedexercise.BaseTest
 import com.lightricks.feedexercise.blockingObserve
+import com.lightricks.feedexercise.data.FeedItem
 import com.lightricks.feedexercise.data.FeedRepository
 import com.lightricks.feedexercise.database.FeedItemEntity
 import io.reactivex.Completable
 import junit.framework.Assert.assertNotNull
+import junit.framework.Assert.assertNull
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.core.Is.`is`
 import org.junit.Before
@@ -32,7 +34,7 @@ class FeedViewModelTest : BaseTest() {
 
     @Test
     fun when_created_feed_is_empty() {
-        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItemEntity>>(emptyList()))
+        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItem>>(emptyList()))
         val fakeCompletable = Completable.fromCallable {}
         `when`(mockRepo.refresh()).thenReturn(fakeCompletable)
         val feedViewModel = FeedViewModel(mockRepo)
@@ -43,7 +45,7 @@ class FeedViewModelTest : BaseTest() {
 
     @Test
     fun when_created_loading_is_true() {
-        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItemEntity>>(emptyList()))
+        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItem>>(emptyList()))
         val fakeCompletable = Completable.fromCallable {
         }
         `when`(mockRepo.refresh()).thenReturn(fakeCompletable)
@@ -54,8 +56,8 @@ class FeedViewModelTest : BaseTest() {
 
     @Test
     fun when_feed_is_not_empty_live_data_updated() {
-        val element = FeedItemEntity("1", "", false)
-        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItemEntity>>(listOf(
+        val element = FeedItem("1", "", false)
+        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItem>>(listOf(
             element
         )))
         val fakeCompletable = Completable.fromCallable { }
@@ -68,7 +70,7 @@ class FeedViewModelTest : BaseTest() {
 
     @Test
     fun when_error_thrown_error_is_emitted() {
-        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItemEntity>>(emptyList()))
+        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItem>>(emptyList()))
         val fakeCompletable = Completable.error { Throwable("test error!") }
         `when`(mockRepo.refresh()).thenReturn(fakeCompletable)
         fakeCompletable.test().assertErrorMessage("test error!")
@@ -76,5 +78,17 @@ class FeedViewModelTest : BaseTest() {
         val error = feedViewModel.getNetworkErrorEvent().blockingObserve()
         assertNotNull(error)
         assertThat(error!!.getContentIfNotHandled(), `is`("test error!"))
+    }
+
+
+    @Test
+    fun when_no_error_thrown_error_not_emitted() {
+        `when`(mockRepo.getFeedItems()).thenReturn(MutableLiveData<List<FeedItem>>(emptyList()))
+        val fakeCompletable = Completable.fromCallable { }
+        `when`(mockRepo.refresh()).thenReturn(fakeCompletable)
+        fakeCompletable.test().assertComplete()
+        val feedViewModel = FeedViewModel(mockRepo)
+        val error = feedViewModel.getNetworkErrorEvent().blockingObserve()
+        assertNull(error)
     }
 }

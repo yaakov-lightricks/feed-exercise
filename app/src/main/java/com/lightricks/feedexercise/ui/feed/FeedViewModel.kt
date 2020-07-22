@@ -1,12 +1,10 @@
 package com.lightricks.feedexercise.ui.feed
 
-import android.util.Log
 import androidx.lifecycle.*
 import com.lightricks.feedexercise.data.FeedItem
 import com.lightricks.feedexercise.data.FeedRepository
-import com.lightricks.feedexercise.data.toFeedItems
 import com.lightricks.feedexercise.util.Event
-import io.reactivex.Completable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import java.lang.IllegalArgumentException
@@ -19,7 +17,6 @@ private const val TAG = "FeedViewModel"
 
 open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel() {
 
-
     private val disposable = CompositeDisposable()
 
     private val isLoading = MutableLiveData<Boolean>(false)
@@ -28,24 +25,17 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
             this.postValue(items.isEmpty())
         }
     }
+
     private val items = MediatorLiveData<List<FeedItem>>().apply {
         this.addSource(feedRepository.getFeedItems()) { items ->
             this.postValue(items.toFeedItems())
         }
     }
-
-//
-//    private val feedItems =
-//        Transformations.map(feedRepository.getFeedItems()) {
-//            it.toFeedItems()
-//        }
-
     private val networkErrorEvent = MutableLiveData<Event<String>>()
 
     fun getIsLoading(): LiveData<Boolean> = isLoading
     fun getIsEmpty(): LiveData<Boolean> = isEmpty
-    fun getFeedItems(): LiveData<List<FeedItem>> = items
-
+    fun getFeedItems(): LiveData<List<FeedItem>> = feedRepository.getFeedItems()
     fun getNetworkErrorEvent(): LiveData<Event<String>> = networkErrorEvent
 
     init {
@@ -53,20 +43,18 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
     }
 
     fun refresh() {
-        Log.d(TAG, "refresh: called")
         isLoading.value = true
         disposable.add(
-            feedRepository.refresh().subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
+            feedRepository.refresh()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                    {
-                        isLoading.postValue(false)
-                    },
+                    { isLoading.value = false },
                     { error ->
                         error?.message?.let {
-                            networkErrorEvent.postValue(Event(it))
-                        }
-                        isLoading.postValue(false)
+                            networkErrorEvent.value = Event(it)
+                        } ?: networkErrorEvent.let { it.value = Event("There was an error") }
+                        isLoading.value = false
                     })
         )
     }

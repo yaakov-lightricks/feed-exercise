@@ -1,9 +1,11 @@
 package com.lightricks.feedexercise.data
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.Transformations
 import com.lightricks.feedexercise.database.FeedDao
-import com.lightricks.feedexercise.database.FeedItemEntity
 import com.lightricks.feedexercise.network.FeedApiService
+import com.lightricks.feedexercise.util.toFeedEntities
+import com.lightricks.feedexercise.util.toFeedItems
 import io.reactivex.Completable
 
 /**
@@ -14,22 +16,17 @@ interface FeedRepository {
 
     fun refresh() : Completable
 
-    fun getFeedItems() : LiveData<List<FeedItemEntity>>
+    fun getFeedItems() : LiveData<List<FeedItem>>
 }
 
 
-class RealFeedRepository(private val feedApiService: FeedApiService, private val feedDao: FeedDao): FeedRepository {
+class FeedRepositoryImpl(private val feedApiService: FeedApiService, private val feedDao: FeedDao): FeedRepository {
 
     override fun refresh() = feedApiService.getFeed().flatMapCompletable { response ->
         feedDao.insertAll(response.templatesMetadata.toFeedEntities())
     }
 
-    override fun getFeedItems() = feedDao.getAll()
-}
-
-fun List<FeedItemEntity>.toFeedItems(): List<FeedItem> { return map {
-    FeedItem(it.id, it.thumbnailUrl, it.isPremium) }
-}
-fun List<FeedItem>.toFeedEntities(): List<FeedItemEntity> { return map {
-    FeedItemEntity(it.id, it.thumbnailUrl, it.isPremium) }
+    override fun getFeedItems() = Transformations.map(feedDao.getAll()) {
+        it.toFeedItems()
+    }
 }
