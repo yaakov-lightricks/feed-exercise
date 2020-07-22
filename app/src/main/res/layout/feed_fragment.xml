@@ -38,17 +38,19 @@
             bind:onRefreshListener="@{() -> viewModel.refresh()}"
             tools:context=".ui.feed.FeedFragment">
 
-            <FrameLayout
+            <LinearLayout
                 android:id="@+id/main_content"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:orientation="vertical"
                 android:padding="@dimen/feed_content_padding">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:visibility="@{viewModel.isEmpty ? View.GONE : View.VISIBLE}" />
+                <Spinner
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:entries="@array/filter_array"
+                    app:clicks="@={viewModel.selectedFilter}"/>
 
                 <TextView
                     android:id="@+id/empty_text"
@@ -56,9 +58,17 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:text="@string/feed_empty_text"
+                    tools:visibility="visible"
                     android:visibility="@{viewModel.isEmpty ? View.VISIBLE : View.GONE}" />
 
-            </FrameLayout>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="@{viewModel.isEmpty ? View.GONE : View.VISIBLE}" />
+
+
+            </LinearLayout>
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>

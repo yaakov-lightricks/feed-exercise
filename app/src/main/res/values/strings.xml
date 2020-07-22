@@ -2,4 +2,9 @@
     <string name="app_name">Feed Exercise</string>
     <string name="feed_empty_text">No data available</string>
     <string name="network_error">Could not load data from the internet</string>
+    <string-array name="filter_array">
+        <item>All</item>
+        <item>Shuffle</item>
+        <item>Premium</item>
+    </string-array>
 </resources>
