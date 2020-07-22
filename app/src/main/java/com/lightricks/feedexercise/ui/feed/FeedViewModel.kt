@@ -1,5 +1,6 @@
 package com.lightricks.feedexercise.ui.feed
 
+import android.util.Log
 import androidx.lifecycle.*
 import com.lightricks.feedexercise.data.FeedItem
 import com.lightricks.feedexercise.data.FeedRepository
@@ -7,7 +8,7 @@ import com.lightricks.feedexercise.util.Event
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import java.lang.IllegalArgumentException
+
 
 /**
  * This view model manages the data for [FeedFragment].
@@ -18,24 +19,28 @@ private const val TAG = "FeedViewModel"
 open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel() {
 
     private val disposable = CompositeDisposable()
-
+    private val internalItems = mutableListOf<FeedItem>()
     private val isLoading = MutableLiveData<Boolean>(false)
     private val isEmpty = MediatorLiveData<Boolean>().apply {
         this.addSource(feedRepository.getFeedItems()) { items ->
             this.postValue(items.isEmpty())
         }
     }
-
     private val items = MediatorLiveData<List<FeedItem>>().apply {
         this.addSource(feedRepository.getFeedItems()) { items ->
-            this.postValue(items.toFeedItems())
+            internalItems.let {
+                it.clear()
+                it.addAll(items)
+            }
+            this.value = items
         }
     }
     private val networkErrorEvent = MutableLiveData<Event<String>>()
 
+
     fun getIsLoading(): LiveData<Boolean> = isLoading
     fun getIsEmpty(): LiveData<Boolean> = isEmpty
-    fun getFeedItems(): LiveData<List<FeedItem>> = feedRepository.getFeedItems()
+    fun getFeedItems(): LiveData<List<FeedItem>> = items
     fun getNetworkErrorEvent(): LiveData<Event<String>> = networkErrorEvent
 
     init {
@@ -60,14 +65,21 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
     }
 
     /**
-     * Shuffle list
-     * @return a [Completable] that completes when the list is shuffled
-     */
-    fun shuffleDisplay() {
-        items.value?.let {
-            items.value = it.shuffled()
+     * handle event of user filter selection
+      */
+    fun onFilterSelected(index: Int) {
+        //index order according filter_array under res/values/string.xml
+        //todo use saeled class/enum
+        when (index) {
+            //all items, no filter
+            0 -> internalItems.let { items.value = it }
+            //shuffle
+            1 -> internalItems.let { items.value = it.shuffled() }
+            //premium
+            2 -> internalItems.let {
+                items.value = it.filter { feedItem -> feedItem.isPremium }
+            }
         }
-
     }
 
     override fun onCleared() {
