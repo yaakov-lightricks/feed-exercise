@@ -1,13 +1,11 @@
 package com.lightricks.feedexercise.ui.feed
 
-import android.util.Log
 import androidx.lifecycle.*
 import com.lightricks.feedexercise.data.FeedItem
 import com.lightricks.feedexercise.data.FeedRepository
-import com.lightricks.feedexercise.data.toFeedItems
 import com.lightricks.feedexercise.util.Event
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.lang.IllegalArgumentException
 
@@ -24,16 +22,11 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
             this.postValue(items.isEmpty())
         }
     }
-
     private val networkErrorEvent = MutableLiveData<Event<String>>()
 
     fun getIsLoading(): LiveData<Boolean> = isLoading
     fun getIsEmpty(): LiveData<Boolean> = isEmpty
-    fun getFeedItems(): LiveData<List<FeedItem>> =
-        Transformations.map(feedRepository.getFeedItems()) {
-            it.toFeedItems()
-        }
-
+    fun getFeedItems(): LiveData<List<FeedItem>> = feedRepository.getFeedItems()
     fun getNetworkErrorEvent(): LiveData<Event<String>> = networkErrorEvent
 
     init {
@@ -42,18 +35,19 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
 
     fun refresh() {
         isLoading.value = true
-        disposable.add(feedRepository.refresh().subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .subscribe(
-                {
-                    isLoading.postValue(false)
-                },
-                { error ->
-                    error?.message?.let {
-                        networkErrorEvent.postValue(Event(it))
-                    }
-                    isLoading.postValue(false)
-                }))
+        disposable.add(
+            feedRepository.refresh()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { isLoading.value = false },
+                    { error ->
+                        error?.message?.let {
+                            networkErrorEvent.value = Event(it)
+                        } ?: networkErrorEvent.let { it.value = Event("There was an error") }
+                        isLoading.value = false
+                    })
+        )
     }
 
     override fun onCleared() {

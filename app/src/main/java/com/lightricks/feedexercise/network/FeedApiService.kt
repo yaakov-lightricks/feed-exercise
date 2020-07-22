@@ -1,6 +1,5 @@
 package com.lightricks.feedexercise.network
 
-import com.lightricks.feedexercise.data.FeedItemAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.reactivex.Single
@@ -12,12 +11,11 @@ import retrofit2.http.GET
 
 interface FeedApiService {
     @GET("feed.json")
-    fun getFeed(): Single<DataTransferObjects>
+    fun getFeed(): Single<FeedResponse>
 
     companion object {
         private const val BASE_URL = "https://assets.swishvideoapp.com/Android/demo/"
-
-        fun getFeedApiService(): FeedApiService {
+        val feedApiService: FeedApiService by lazy {
             val moshi = Moshi.Builder()
                 .add(KotlinJsonAdapterFactory())
                 .add(FeedItemAdapter())
@@ -27,7 +25,7 @@ interface FeedApiService {
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .addConverterFactory(MoshiConverterFactory.create(moshi))
                 .build()
-            return retrofit.create(FeedApiService::class.java)
+            retrofit.create(FeedApiService::class.java)
         }
     }
 }
