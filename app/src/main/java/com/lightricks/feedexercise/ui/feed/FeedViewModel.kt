@@ -42,9 +42,7 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
                 .subscribe(
                     { isLoading.value = false },
                     { error ->
-                        error?.message?.let {
-                            networkErrorEvent.value = Event(it)
-                        } ?: networkErrorEvent.let { it.value = Event("There was an error") }
+                        networkErrorEvent.value = Event(error?.message ?: "error")
                         isLoading.value = false
                     })
         )
