@@ -1,6 +1,5 @@
 package com.lightricks.feedexercise.ui.feed
 
-import android.util.Log
 import androidx.lifecycle.*
 import com.lightricks.feedexercise.data.FeedItem
 import com.lightricks.feedexercise.data.FeedRepository
@@ -18,21 +17,22 @@ private const val TAG = "FeedViewModel"
 
 open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel() {
 
+    //holds all RxJava sources in one container
     private val disposable = CompositeDisposable()
-    private val internalItems = mutableListOf<FeedItem>()
+    //holds current selected filter index
+    private var selectedFilterIndex = 0
     private val isLoading = MutableLiveData<Boolean>(false)
-    private val isEmpty = MediatorLiveData<Boolean>().apply {
-        this.addSource(feedRepository.getFeedItems()) { items ->
-            this.postValue(items.isEmpty())
-        }
-    }
+
+    private val isEmpty = MutableLiveData<Boolean>()
+    //capture current feed items
+    private val internalItems = mutableListOf<FeedItem>()
     private val items = MediatorLiveData<List<FeedItem>>().apply {
         this.addSource(feedRepository.getFeedItems()) { items ->
             internalItems.let {
                 it.clear()
                 it.addAll(items)
             }
-            this.value = items
+            updateItemsFeed(selectedFilterIndex)
         }
     }
     private val networkErrorEvent = MutableLiveData<Event<String>>()
@@ -44,9 +44,13 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
     fun getNetworkErrorEvent(): LiveData<Event<String>> = networkErrorEvent
 
     init {
+        //todo add mechanism to avoid refetching data in short intervals
         refresh()
     }
 
+    /**
+     * initiate call to fetch items from [FeedRepository]
+     */
     fun refresh() {
         isLoading.value = true
         disposable.add(
@@ -69,8 +73,18 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
       */
     fun onFilterSelected(index: Int) {
         //index order according filter_array under res/values/string.xml
+        //todo save selected filter to storage
+        selectedFilterIndex = index
+        updateItemsFeed(selectedFilterIndex)
+    }
+
+    /**
+     * update current feed according current filter
+     * source of true for updating current UI state
+     */
+    private fun updateItemsFeed(selectedFilter: Int){
         //todo use saeled class/enum
-        when (index) {
+        when (selectedFilter) {
             //all items, no filter
             0 -> internalItems.let { items.value = it }
             //shuffle
@@ -80,6 +94,9 @@ open class FeedViewModel(private val feedRepository: FeedRepository) : ViewModel
                 items.value = it.filter { feedItem -> feedItem.isPremium }
             }
         }
+        //update isEmpty
+        isEmpty.postValue(items.value?.isEmpty() ?: false)
+
     }
 
     override fun onCleared() {
